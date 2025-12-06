@@ -1,55 +1,45 @@
-# SVM ile Meme Kanseri Teşhisi - Breast Cancer Wisconsin (Diagnostic) Dataset
+# SVM ile Meme Kanseri Teshisi (Breast Cancer Wisconsin Diagnostic)
 
-Bu proje, **Support Vector Machine (SVM)** algoritması ile meme kanseri teşhisi yapmayı amaçlamaktadır. Kaggle üzerinden indirilen **Breast Cancer Wisconsin (Diagnostic)** veri seti kullanılarak, hem kütüphane kullanmadan, hem de `scikit-learn` gibi kütüphanelerle SVM sınıflandırma gerçekleştirilmiştir.
+Bu proje, **Support Vector Machine (SVM)** ile meme kanseri tani problemi uzerine iki farkli yaklasim sunar: kutuphanesiz (sifirdan) ve `scikit-learn` ile. Kaggle'daki **Breast Cancer Wisconsin (Diagnostic)** veri seti kullanilir.
 
-## Veri Seti Bilgisi
-
+## Veri Seti
 - **Kaynak**: [Kaggle - Breast Cancer Wisconsin (Diagnostic) Data Set](https://www.kaggle.com/datasets/uciml/breast-cancer-wisconsin-data)
-- **Veri Sayısı**: 569 hasta
-- **Özellik Sayısı**: 32 (1 ID, 1 Hedef Etiket, 30 Giriş Özelliği)
-- **Hedef Etiket**: 
-  - `M` → Malign (Kötü Huylu)
-  - `B` → Benign (İyi Huylu)
+- **Toplam ornek**: 569 hasta
+- **Ozellikler**: 32 sutun (1 ID, 1 hedef etiket, 30 sayisal girdi)
+- **Etiketler**: `M` = Malignant, `B` = Benign (preprocess adimi etiketleri {1, -1} olarak kodlar)
 
-> Özellikler, bir meme kitlesinin ince iğne aspirasyonunun (FNA) sayısallaştırılmış görüntüsünden hesaplanmıştır. Görüntüdeki hücre çekirdeklerinin sayısal özelliklerini içerir.
+## Kullanım
+1. Ham CSV'yi normalize et:
+   ```bash
+   python BreastCancer/preprocess.py --input BreastCancer/data.csv --output BreastCancer/processed_data.csv
+   ```
+2. Kutuphanesiz SVM (deterministik bolme ve egitim):
+   ```bash
+   python BreastCancer/svm_from_scratch.py --data-path BreastCancer/processed_data.csv --epochs 120 --lr 0.001 --C 10 --seed 42 --train-ratio 0.7 --val-ratio 0.15 --output-path BreastCancer/test_results_scratch.csv
+   ```
+3. scikit-learn SVM (plotlar opsiyonel):
+   ```bash
+   python BreastCancer/svm_with_sklearn.py --data-path BreastCancer/processed_data.csv --kernel linear --C 10 --gamma scale --seed 42 --skip-plots --output-path BreastCancer/test_results_sklearn.csv
+   ```
 
----
+Notlar:
+- Tum scriptler varsayilan olarak `BreastCancer/processed_data.csv` yolunu kullanir ve `--seed` ile ayni bolumler yeniden uretilebilir.
+- `--skip-export` tahmin CSV'sini yazmaz; `--skip-plots` / `--show-plots` bayraklari gorsel ciktilari kontrol eder.
 
-## SVM Algoritması Nedir?
+## Script Ozeti
 
-**Support Vector Machine (SVM)**, sınıflandırma problemlerinde sıklıkla kullanılan denetimli bir makine öğrenmesi algoritmasıdır. Temel amacı, sınıflar arasındaki en büyük marjini sağlayan bir hiper düzlem bulmaktır.
+### 1) Kutuphanesiz SVM (`BreastCancer/svm_from_scratch.py`)
+- Lineer SVM icin hinge loss ve L2 regularization uygular.
+- `data_utils.split_data` ile deterministik train/val/test bolumu.
+- Test tahminleri opsiyonel olarak `test_results_scratch.csv` dosyasina yazilir.
 
-- **Hinge Loss** fonksiyonu kullanılarak sınıflandırma hataları minimize edilir.
-- **Regularization (Ceza Terimi)**, modelin aşırı öğrenmesini engellemek için kullanılır.
-- Bu projede hem **kütüphanesiz (manual)** hem de **kütüphaneli (scikit-learn)** versiyonları uygulanmıştır.
+### 2) scikit-learn SVM (`BreastCancer/svm_with_sklearn.py`)
+- `StandardScaler` + `sklearn.svm.SVC` (varsayilan kernel: linear).
+- Test tahminleri CSV'ye yazilabilir, karisiklik matrisi ve 2B PCA karar siniri grafiklerini kaydedebilir.
+- Plotlar `--skip-plots` ile devre disi birakilabilir; gorseller `BreastCancer/images/` dizinine kaydedilir.
 
----
-
-## 🧪 Proje İçeriği
-
-### 1. Kütüphanesiz SVM
-- Python ile sıfırdan yazılmış SVM algoritması
-- Eğitim (Train), Doğrulama (Validation) ve Test veri setlerinde performans sonuçları
-- Eğitim süreci ekran çıktısı aşağıda yer almaktadır:
-
-![Kütüphanesiz SVM Performans](BreastCancer/images/svm_scratch_results.jpeg)
-
----
-
-### 2. Kütüphaneli SVM (Scikit-learn)
-- `sklearn.svm.SVC` ile implementasyon
-- Özellik ölçekleme (`StandardScaler`)
-
-![Kütüphaneli SVM Performans](BreastCancer/images/svm_sklearn_results.jpeg)
-
-- **Test verisi için karmaşıklık matrisi**:
-
-![Karmaşıklık Matrisi](BreastCancer/images/confusion_matrix.jpeg)
-
-- **Karar Sınırı Grafiği**:
-
-> (Not: Karar sınırı grafiği sadece 2 boyutlu veri ile çizilebildiği için, PCA veya seçilmiş iki özellik üzerinden çizilmiştir.)
-
-![Karar Sınırı](BreastCancer/images/decision_boundary_pca.png)
-
-
+## Ornek Ciktilar
+- Kutuphanesiz SVM egitim logu ve performans: `BreastCancer/images/svm_scratch_results.jpeg`
+- scikit-learn modeli performansi: `BreastCancer/images/svm_sklearn_results.jpeg`
+- Test karisiklik matrisi: `BreastCancer/images/confusion_matrix.jpeg`
+- PCA uzerinde karar siniri: `BreastCancer/images/decision_boundary_pca.png`
